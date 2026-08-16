@@ -3,17 +3,19 @@ import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardActionArea from "@mui/material/CardActionArea";
 import CardContent from "@mui/material/CardContent";
+import Chip from "@mui/material/Chip";
 import FormControl from "@mui/material/FormControl";
 import Grid from "@mui/material/Grid";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
+import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useEffect, useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
 import { listMovies, listPlatforms } from "../api";
-import StatusChip, { ottLabel } from "../components/StatusChip";
+import { isOnOtt, platformNames } from "../components/StatusChip";
 import type { Movie, OttStatus, Platform } from "../types";
 
 export default function Dashboard() {
@@ -47,11 +49,11 @@ export default function Dashboard() {
         Find where to watch
       </Typography>
       <Typography color="text.secondary" sx={{ mb: 3 }}>
-        Search the catalog for platforms and OTT dates. Predicted dates are estimates when studios have not announced yet.
+        Search the catalog for platforms and expected OTT dates.
       </Typography>
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
-          {error}. Start the API with <code>uvicorn app.main:app --reload</code> from <code>backend/</code>.
+          {error}. Start the API from <code>ott-movies-be</code> on port 8000.
         </Alert>
       )}
       <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 3 }}>
@@ -71,7 +73,7 @@ export default function Dashboard() {
             <MenuItem value="">All</MenuItem>
             <MenuItem value="available">On OTT</MenuItem>
             <MenuItem value="announced">Date announced</MenuItem>
-            <MenuItem value="unknown">Predicted</MenuItem>
+            <MenuItem value="unknown">Coming soon</MenuItem>
           </Select>
         </FormControl>
         <FormControl sx={{ minWidth: 200 }}>
@@ -102,12 +104,21 @@ export default function Dashboard() {
                 />
                 <CardContent>
                   <Typography variant="h6">{movie.title}</Typography>
-                  <Box sx={{ mt: 1, mb: 1 }}>
-                    <StatusChip status={movie.ott?.status} />
-                  </Box>
-                  <Typography variant="body2" color="text.secondary">
-                    {ottLabel(movie)}
-                  </Typography>
+                  {isOnOtt(movie) ? (
+                    <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mt: 1 }}>
+                      {platformNames(movie).length === 0 ? (
+                        <Typography variant="body2" color="text.secondary">
+                          Available on OTT
+                        </Typography>
+                      ) : (
+                        platformNames(movie).map((name) => <Chip key={name} size="small" label={name} />)
+                      )}
+                    </Stack>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                      Coming soon
+                    </Typography>
+                  )}
                 </CardContent>
               </CardActionArea>
             </Card>
