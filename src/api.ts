@@ -1,6 +1,6 @@
 import type { Movie, MovieWrite, Platform } from "./types";
 
-const API = "/api";
+const API = import.meta.env.VITE_API_URL ?? (import.meta.env.PROD ? "https://ott-movies-be.kkabhilash72.workers.dev" : "/api");
 
 function headers(auth = false): HeadersInit {
   const token = localStorage.getItem("ott_token");
