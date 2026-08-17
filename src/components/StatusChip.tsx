@@ -1,10 +1,10 @@
 import Chip from "@mui/material/Chip";
-import type { Movie, OttStatus } from "../types";
+import type { Movie, OttInfo, OttStatus } from "../types";
 
 const labels: Record<OttStatus, string> = {
-  available: "On OTT",
-  announced: "Date announced",
-  unknown: "Coming soon",
+  available: "Official / Confirmed",
+  announced: "Announced",
+  unknown: "Predicted",
 };
 
 const colors: Record<OttStatus, "success" | "info" | "warning"> = {
@@ -17,31 +17,29 @@ export function isOnOtt(movie: Movie): boolean {
   return movie.ott?.status === "available";
 }
 
-export function expectedOttDate(movie: Movie): string | null {
-  const ott = movie.ott;
-  if (!ott) return null;
-  return ott.announced_date ?? ott.predicted_date;
-}
-
 export function platformNames(movie: Movie): string[] {
   const names = movie.availability.map((item) => item.platform.name);
   return [...new Set(names)];
 }
 
-export function ottLabel(movie: Movie): string {
-  const ott = movie.ott;
-  if (!ott) return "No date";
-  if (ott.status === "available") {
-    const names = platformNames(movie);
-    return names.length ? `Watch on ${names.join(", ")}` : "Available";
-  }
-  if (ott.status === "announced" && ott.announced_date) {
-    return `OTT on ${ott.announced_date}`;
-  }
-  if (ott.predicted_date) {
-    return `Expected ${ott.predicted_date}`;
-  }
-  return "OTT date unknown";
+export function formatOttDay(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  const parsed = new Date(`${iso}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return iso;
+  return parsed.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+}
+
+export function formatOttWindow(ott: OttInfo | null): string | null {
+  if (!ott?.window_start || !ott.window_end) return formatOttDay(ott?.predicted_date);
+  const start = formatOttDay(ott.window_start);
+  const end = formatOttDay(ott.window_end);
+  if (!start || !end) return null;
+  return `${start} – ${end}`;
+}
+
+export function confidenceLabel(value: number | null | undefined): string | null {
+  if (value == null) return null;
+  return `${Math.round(value * 100)}%`;
 }
 
 export default function StatusChip({ status }: { status: OttStatus | undefined }) {

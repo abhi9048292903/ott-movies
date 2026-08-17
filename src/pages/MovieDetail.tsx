@@ -8,7 +8,13 @@ import Typography from "@mui/material/Typography";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getMovie } from "../api";
-import { expectedOttDate, isOnOtt, platformNames } from "../components/StatusChip";
+import StatusChip, {
+  confidenceLabel,
+  formatOttDay,
+  formatOttWindow,
+  isOnOtt,
+  platformNames,
+} from "../components/StatusChip";
 import type { Movie } from "../types";
 
 export default function MovieDetail() {
@@ -28,7 +34,12 @@ export default function MovieDetail() {
   if (!movie) return <Typography color="text.secondary">Loading…</Typography>;
 
   const platforms = platformNames(movie);
-  const ottDate = expectedOttDate(movie);
+  const ott = movie.ott;
+  const predictedWindow = formatOttWindow(ott);
+  const mostLikelyDate = formatOttDay(ott?.predicted_date);
+  const confidence = confidenceLabel(ott?.confidence);
+  const likelyPlatform = ott?.likely_platform?.name;
+  const platformConfidence = confidenceLabel(ott?.platform_confidence);
 
   return (
     <Box>
@@ -46,39 +57,63 @@ export default function MovieDetail() {
       <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
         {movie.title}
       </Typography>
+      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
+        <StatusChip status={ott?.status} />
+      </Stack>
       {movie.overview && (
         <Typography sx={{ mb: 2, maxWidth: 720 }}>{movie.overview}</Typography>
       )}
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
         Theatrical: {movie.theatrical_date ?? "not set"} · Language: {movie.language} · Region: {movie.country}
       </Typography>
-      {isOnOtt(movie) ? (
-        <>
+
+      {isOnOtt(movie) && (
+        <Box sx={{ mb: 2 }}>
           <Typography variant="h6" sx={{ mb: 1 }}>
-            Available on
+            Official / Confirmed
           </Typography>
-          {platforms.length === 0 ? (
-            <Typography color="text.secondary">No platform listed yet.</Typography>
-          ) : (
-            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-              {platforms.map((name) => (
-                <Chip key={name} label={name} />
-              ))}
-            </Stack>
-          )}
-        </>
-      ) : (
-        <Box sx={{ maxWidth: 720 }}>
+          <Typography sx={{ mb: 1 }}>Streaming now{platforms.length ? ` on ${platforms.join(", ")}` : ""}.</Typography>
+        </Box>
+      )}
+
+      {ott?.status === "announced" && (
+        <Box sx={{ mb: 2, maxWidth: 720 }}>
           <Typography variant="h6" sx={{ mb: 1 }}>
-            Expected OTT
+            Announced
           </Typography>
-          <Typography sx={{ mb: 1 }}>
-            Expected OTT release date: {ottDate ?? "to be announced"}
+          <Typography>
+            Official OTT date: {formatOttDay(ott.announced_date) ?? "date listed by studio"}
           </Typography>
-          <Typography sx={{ mb: 2 }}>
-            Expected OTT platform: {platforms.length ? platforms.join(", ") : "to be announced"}
+          <Typography sx={{ mt: 0.5 }}>
+            Platform: {platforms.length ? platforms.join(", ") : "to be confirmed"}
           </Typography>
         </Box>
+      )}
+
+      {ott?.status === "unknown" && (
+        <Box sx={{ maxWidth: 720 }}>
+          <Typography variant="h6" sx={{ mb: 1 }}>
+            Predicted
+          </Typography>
+          <Typography sx={{ mb: 0.5 }}>Expected OTT: {predictedWindow ?? "window not available yet"}</Typography>
+          <Typography sx={{ mb: 0.5 }}>Most likely: {mostLikelyDate ?? "—"}</Typography>
+          <Typography sx={{ mb: 0.5 }}>Confidence: {confidence ?? "—"}</Typography>
+          <Typography sx={{ mb: 1 }}>
+            Most likely platform: {likelyPlatform ?? "to be announced"}
+            {platformConfidence ? ` (${platformConfidence})` : ""}
+          </Typography>
+          <Alert severity="info">
+            This is an estimate from historical theatrical-to-OTT windows, not an official studio date.
+          </Alert>
+        </Box>
+      )}
+
+      {isOnOtt(movie) && platforms.length > 0 && (
+        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: 1 }}>
+          {platforms.map((name) => (
+            <Chip key={name} label={name} />
+          ))}
+        </Stack>
       )}
     </Box>
   );

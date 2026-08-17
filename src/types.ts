@@ -21,8 +21,13 @@ export type OttInfo = {
   announced_date: string | null;
   predicted_date: string | null;
   predicted_window_days: number | null;
+  window_start: string | null;
+  window_end: string | null;
   confidence: number | null;
+  likely_platform: Platform | null;
+  platform_confidence: number | null;
   model_version: string | null;
+  generated_at: string | null;
 };
 
 export type Movie = {
